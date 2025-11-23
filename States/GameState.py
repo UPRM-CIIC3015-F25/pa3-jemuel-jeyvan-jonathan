@@ -536,33 +536,40 @@ class GameState(State):
     #   Avoid any for/while loops — recursion alone must handle the repetition.
     def calculate_gold_reward(self, playerInfo, stage=0):
         blind_type = playerInfo.levelManager.curSubLevel.blindType
-        target_score = playerInfo.levelManager.curSubLevel.score
-        round_score = playerInfo.roundScore
-
-        def overkill_recursive(extra_score):
-            if extra_score < 50:
-                return 0
-            else:
-                return 1 + overkill_recursive(extra_score - 50)
-
+        target = playerInfo.levelManager.curSubLevel.score
+        score = playerInfo.roundScore
         if stage == 0:
             if blind_type == "SMALL":
-                base_gold = 4
+                base = 4
             elif blind_type == "BIG":
-                base_gold = 8
+                base = 8
             elif blind_type == "BOSS":
-                base_gold = 10
+                base = 10
             else:
-                base_gold = 0
+                base = 0
 
-            return base_gold + self.calculate_gold_reward(playerInfo, stage=1)
+            return base + self.calculate_gold_reward(playerInfo, stage=1)
 
         elif stage == 1:
-            extra = 0
-            if round_score > target_score:
-                extra = round_score - target_score
-            bonus = overkill_recursive(extra)
-            return bonus
+
+            def bonus_recursive(value):
+                if value <= 0:
+                    return 0
+                if value >= 1:
+                    return 5
+                return 5 * value
+
+            extra = score - target
+            if extra <= 0:
+                return 0
+
+            ratio = extra / target
+            bonus = bonus_recursive(ratio)
+
+            if bonus > 5:
+                bonus = 5
+
+            return int(bonus)
 
         return 0
 
