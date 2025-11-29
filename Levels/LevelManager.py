@@ -58,5 +58,18 @@ class LevelManager():
     #   It should check each sublevel in order and return the first one that isn’t finished.
     #   Stop once all have been checked or one is found. Avoid using loops. (USE RECURSIONS)
     def next_unfinished_sublevel(self, index=0):
-        return None
-    
+        if self.p.playerAnte not in self.levelsDict:
+            return None
+
+        level_list = self.levelsDict[self.p.playerAnte]
+
+        # Base case: no more sublevels to check
+        if index >= len(level_list):
+            return None
+
+        # If this sublevel is unfinished, return it
+        if not level_list[index].finished:
+            return level_list[index]
+
+        # Recursive case: check the next sublevel
+        return self.next_unfinished_sublevel(index + 1)

@@ -535,7 +535,43 @@ class GameState(State):
     #     - A clear base case to stop recursion when all parts are done
     #   Avoid any for/while loops — recursion alone must handle the repetition.
     def calculate_gold_reward(self, playerInfo, stage=0):
-            return 0
+        blind_type = playerInfo.levelManager.curSubLevel.blindType
+        target = playerInfo.levelManager.curSubLevel.score
+        score = playerInfo.roundScore
+        if stage == 0:
+            if blind_type == "SMALL":
+                base = 4
+            elif blind_type == "BIG":
+                base = 8
+            elif blind_type == "BOSS":
+                base = 10
+            else:
+                base = 0
+
+            return base + self.calculate_gold_reward(playerInfo, stage=1)
+
+        elif stage == 1:
+
+            def bonus_recursive(value):
+                if value <= 0:
+                    return 0
+                if value >= 1:
+                    return 5
+                return 5 * value
+
+            extra = score - target
+            if extra <= 0:
+                return 0
+
+            ratio = extra / target
+            bonus = bonus_recursive(ratio)
+
+            if bonus > 5:
+                bonus = 5
+
+            return int(bonus)
+
+        return 0
 
     def updateCards(self, posX, posY, cardsDict, cardsList, scale=1.5, spacing=90, baseYOffset=-20, leftShift=40):
         cardsDict.clear()
@@ -555,6 +591,47 @@ class GameState(State):
     #   until the entire hand is ordered correctly.
     def SortCards(self, sort_by: str = "suit"):
         suitOrder = [Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS, Suit.SPADES] # Define the order of suits
+        def suit_index(suit):
+            i = 0
+            while i < len(suitOrder):
+                if suitOrder[i] == suit:
+                    return i
+                i += 1
+            return 0
+
+        def should_swap(card_a, card_b):
+            if sort_by == "rank":
+                a_rank = card_a.rank.value
+                b_rank = card_b.rank.value
+                a_suit = suit_index(card_a.suit)
+                b_suit = suit_index(card_b.suit)
+                if a_rank > b_rank:
+                    return True
+                if a_rank == b_rank and a_suit > b_suit:
+                    return True
+                return False
+            else:
+                a_suit = suit_index(card_a.suit)
+                b_suit = suit_index(card_b.suit)
+                a_rank = card_a.rank.value
+                b_rank = card_b.rank.value
+                if a_suit > b_suit:
+                    return True
+                if a_suit == b_suit and a_rank > b_rank:
+                    return True
+                return False
+
+        n = len(self.hand)
+        i = 0
+        while i < n - 1:
+            j = i + 1
+            while j < n:
+                if should_swap(self.hand[i], self.hand[j]):
+                    temp = self.hand[i]
+                    self.hand[i] = self.hand[j]
+                    self.hand[j] = temp
+                j += 1
+            i += 1
         self.updateCards(400, 520, self.cards, self.hand, scale=1.2)
 
     def checkHoverCards(self):
@@ -817,4 +894,39 @@ class GameState(State):
     #   recursion finishes, reset card selections, clear any display text or tracking lists, and
     #   update the visual layout of the player's hand.
     def discardCards(self, removeFromHand: bool):
+        def discard_selected():
+            if len(self.cardsSelectedList) == 0:
+                return
+            card = self.cardsSelectedList.pop()
+            card.isSelected = False
+            if removeFromHand:
+                if card in self.hand:
+                    self.hand.remove(card)
+                self.used.append(card)
+            self.deselect_sfx.play()
+            discard_selected()  # recurse
+        def draw_until_full():
+            if len(self.hand) >= 8:
+                return
+            if len(self.deck) == 0:
+                return
+            new_card = self.deck[0]
+            self.deck.pop(0)
+            self.hand.append(new_card)
+            draw_until_full()
+
+        discard_selected()
+        draw_until_full()
+
+        # reset visual / text state
+        self.cardsSelectedList.clear()
+        self.cardsSelectedRect.clear()
+        self.playedHandName = ""
+        self.playedHandTextSurface = None
+        self.scoreBreakdownTextSurface = None
+
+        self.playerInfo.playerChips = 0
+        self.playerInfo.playerMultiplier = 0
+        self.playerInfo.curHandOfPlayer = ""
+        self.playerInfo.curHandText = self.playerInfo.textFont1.render("", False, 'white')
         self.updateCards(400, 520, self.cards, self.hand, scale=1.2)
