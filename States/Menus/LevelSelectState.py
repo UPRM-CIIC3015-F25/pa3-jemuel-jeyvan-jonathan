@@ -90,11 +90,32 @@ class LevelSelectState(State):
                 #   on which boss is active.
                 #   Finally, make sure to reset the player’s round score to 0 at the end of this setup.
                 #   Avoid unnecessary repetition—use clear condition structure to make the logic readable.
+                boss = lm.curSubLevel.name
+
+                self.playerInfo.handLimit = 5
+                self.playerInfo.discardLimit = 3
+                self.playerInfo.faceDownFirstHand = False
+                self.playerInfo.faceDownAllFaces = False
+                self.playerInfo.randomDiscardOnPlay = 0
+
+                if boss == "The Mark":
+                    self.playerInfo.faceDownAllFaces = True
+                elif boss == "The Needle":
+                    self.playerInfo.handLimit = 1
+                elif boss == "The House":
+                    self.playerInfo.faceDownFirstHand = True
+                elif boss == "The Hook":
+                    self.playerInfo.randomDiscardOnPlay = 2
+                elif boss == "The Water":
+                    self.playerInfo.discardLimit = 0
+                elif boss == "The Manacle":
+                    self.playerInfo.handLimit = max(1, self.playerInfo.handLimit - 1)
+
                 self.playerInfo.roundScore = 0
-                
+
                 # Set target score for the new sublevel
                 self.playerInfo.score = self.playerInfo.levelManager.curSubLevel.score
-                
+
                 # Prepare for the nextState : GameState
                 self.deckManager.resetDeck = True
                 self.isFinished = True
@@ -116,7 +137,12 @@ class LevelSelectState(State):
         #   what unique restriction or ability that boss applies during the round.
         #   This dictionary will later be used to look up and apply special effects based on which boss is active.
         boss_abilities = {
-
+            "The Mark": "All Face cards are drawn face down",
+            "The Needle": "Play only 1 hand",
+            "The House": "First hand is drawn face down",
+            "The Hook": "Discards 2 random cards held in hand after every played hand",
+            "The Water": "Start with 0 discards",
+            "The Manacle": "-1 hand size"
         }
 
         # Dict of boss with their color schemes
