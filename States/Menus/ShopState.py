@@ -93,41 +93,37 @@ class ShopState(State):
         
         return desc_map.get(getattr(joker_obj, 'name', ''), "No description available.")
 
+    HAND_SCORES = {
+        "High Card": {"chips": 5, "multiplier": 1, "level": 1},
+        "One Pair": {"chips": 10, "multiplier": 2, "level": 1},
+        "Two Pair": {"chips": 20, "multiplier": 2, "level": 1},
+        "Three of a Kind": {"chips": 30, "multiplier": 3, "level": 1},
+        "Straight": {"chips": 40, "multiplier": 4, "level": 1},
+        "Flush": {"chips": 50, "multiplier": 4, "level": 1},
+        "Full House": {"chips": 60, "multiplier": 5, "level": 1},
+        "Four of a Kind": {"chips": 80, "multiplier": 7, "level": 1},
+        "Straight Flush": {"chips": 100, "multiplier": 8, "level": 1},
+    }
+
     # TODO (TASK 6.2): Implement the HAND_SCORES dictionary to define all poker hand types and their base stats.
     #   Each key should be the name of a hand (e.g., "Two Pair", "Straight"), and each value should be a dictionary
     #   containing its "chips", "multiplier", and "level" fields.
     #   Remember: the Sun upgrades all hands, while other planets upgrade only their specific one.
     def activatePlanet(self, planet):
-        if planet.name not in PLANETS:
-            print(f"[ERROR] Planet {planet.name} not found in PLANETS.")
+        desc = planet.description
+        target_hand = desc.replace("levels up", "").strip()
+
+        if planet.name == "Sun":
+            for hand in self.HAND_SCORES:
+                self.HAND_SCORES[hand]["chips"] += planet.chips
+                self.HAND_SCORES[hand]["multiplier"] += planet.mult
+                self.HAND_SCORES[hand]["level"] += 1
             return
 
-            # Mapeo de planetas a la mano que mejora
-        PLANET_HANDS = {
-            "Sun": "All",  # El Sol mejora todas
-            "Mercury": "High Card",
-            "Venus": "One Pair",
-            "Earth": "Two Pair",
-            "Mars": "Three of a Kind",
-            "Jupiter": "Straight",
-            "Saturn": "Flush",
-            "Uranus": "Full House",
-            "Neptune": "Four of a Kind"
-        }
-
-        for hand in HAND_SCORES.keys():
-            # Si es el Sol, mejora todas
-            if planet.name == "Sun":
-                HAND_SCORES[hand]["chips"] += planet.chips
-                HAND_SCORES[hand]["multiplier"] += planet.mult
-                HAND_SCORES[hand]["level"] += 1
-            # Otros planetas solo su mano específica
-            elif PLANET_HANDS.get(planet.name) == hand:
-                HAND_SCORES[hand]["chips"] += planet.chips
-                HAND_SCORES[hand]["multiplier"] += planet.mult
-                HAND_SCORES[hand]["level"] += 1
-
-        print(f"[SHOP] Activated planet: {planet.name}")
+        if target_hand in self.HAND_SCORES:
+            self.HAND_SCORES[target_hand]["chips"] += planet.chips
+            self.HAND_SCORES[target_hand]["multiplier"] += planet.mult
+            self.HAND_SCORES[target_hand]["level"] += 1
 
     # ---------- Helpers ----------
     def _wrap_lines(self, text, font, max_width):
