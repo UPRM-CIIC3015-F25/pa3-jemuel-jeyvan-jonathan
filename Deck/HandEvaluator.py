@@ -42,13 +42,10 @@ def evaluate_hand(hand: list[Card]):
 
 
     # Lista de ranks sin duplicados
-    unique_ranks = []
-    for card in hand:
-        if card.rank not in unique_ranks:
-            unique_ranks.append(card.rank)
+    unique_ranks = sorted({card.rank.value for card in hand})
 
-
-    unique_ranks.sort()
+    if 14 in unique_ranks:  # As
+        unique_ranks.append(1)
 
     # Ace bajo
     if Rank.ACE in unique_ranks:
@@ -67,11 +64,12 @@ def evaluate_hand(hand: list[Card]):
             in_row = 1
         i += 1
 
-    # ----- Straight Flush -----
+    # Straight Flush
     if flush and straight:
         return "Straight Flush"
 
-    # ----- Resto de las jugadas -----
+    # Resto de las jugadas
+
     if counts[0] == 4:
         return "Four of a Kind"
 
